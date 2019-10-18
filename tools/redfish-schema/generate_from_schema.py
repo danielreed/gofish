@@ -6,17 +6,19 @@
 import argparse
 import io
 import logging
-import pprint
 import textwrap
-
+import pprint
 import jinja2
 import requests
+
+proxies = {
+ "http": "http://proxy.houston.hpecorp.net:8080",
+ "https": "http://proxy.houston.hpecorp.net:8080",
+}
 
 LOG = logging.getLogger(__name__)
 
 SCHEMA_BASE = 'http://redfish.dmtf.org/schemas/'
-#SCHEMA_BASE = 'http://redfish.dmtf.org/schemas/swordfish/v1/'
-
 
 COMMON_NAME_CHANGES = {
     'Oem': 'OEM',
@@ -34,18 +36,6 @@ COMMON_DESC = {
     'Identifier': 'Identifier shall be unique within the managed ecosystem.',
 }
 
-numberwords = {
-    '1': 'One',
-    '2': 'Two',
-    '3': 'Three',
-    '4': 'Four',
-    '5': 'Five',
-    '6': 'Six',
-    '7': 'Seven',
-    '8': 'Eight',
-    '9': 'Nine',
-
-}
 def _ident(name):
     outname = name
 
@@ -55,11 +45,6 @@ def _ident(name):
     outname = outname.replace(':','_')               # Collapse spaces
     outname = outname.replace('/','_div_')
     outname = outname.replace('+','_plus_')
-#### not working yet
-    if len(outname) == 1:
-        if outname[0:1].isdigit():
-            outname = numberwords[outname[0]]
-
     return outname
 
 def _format_comment(name, description, cutpoint='used', add=' is'):
@@ -82,17 +67,18 @@ def _get_desc(obj):
 
 
 def _get_type(name, obj):
-    result = 'string'
+    result = 'String'
     tipe = obj.get('type')
     anyof = obj.get('anyOf') or obj.get('items', {}).get('anyOf')
     if 'count' in name.lower():
-        result = 'int'
+        result = 'Int'
     elif name == 'Status':
         result = 'common.Status'
     elif name == 'Identifier':
-        result = 'common.Identifier'
+        # result = 'common.Identifier'
+        result = 'Id'
     elif name == 'Description':
-        result = 'string'
+        result = 'String'
     elif tipe == 'object':
         result = name
     elif isinstance(tipe, list):
@@ -100,9 +86,9 @@ def _get_type(name, obj):
             if kind == 'null':
                 continue
             if kind == 'integer' or kind == 'number':
-                result = 'int'
+                result = 'Int'
             elif kind == 'boolean':
-                result = 'bool'
+                result = 'Boolean'
             else:
                 result = kind
     elif isinstance(anyof, list):
@@ -111,14 +97,16 @@ def _get_type(name, obj):
                 result = kind['$ref'].split('/')[-1]
     elif '$ref' in obj.get('items', {}):
         result = obj['items']['$ref'].split('/')[-1]
-    elif name[:1] == name[:1].lower() and 'odata' not in name.lower():
+    elif name[:1] == name[:1].lower() and 'odata' not in name.lower(): # doesn't work
         result = 'common.Link'
 
     if tipe == 'array':
-        result = '[]' + result
+        # result = '[]' + result
+        result = 'List' + result
 
     if 'odata' in name or name in COMMON_NAME_CHANGES:
-        result = '%s `json:"%s"`' % (result, name)
+        #result = '%s `json:"%s"`' % (result, name)
+        result = result
 
     return result
 
@@ -154,7 +142,7 @@ def _add_object(params, name, obj):
 
 
 def _add_enum(params, name, enum):
-    """Adds enum information to our template parameteres."""
+    """Adds enum information to our template parameters."""
     enum_info = {
         'name': name,
         'identname' : _ident(name),
@@ -179,7 +167,7 @@ def main():
         help='The Redfish schema object to process.')
     parser.add_argument(
         '-o',
-        '--output-file',
+        '--output',
         help='File to write results to. Default is to stdout.')
     parser.add_argument(
         '-v', '--verbose', action='store_true',
@@ -194,7 +182,7 @@ def main():
     LOG.debug(url)
     sourcefile = '%s' % (args.source)
 
-    data = requests.get(url)
+    data = requests.get(url, proxies=proxies)
     try:
         base_data = data.json()
     except Exception:
@@ -213,7 +201,7 @@ def main():
                     url = refurl
             break
 
-    object_data = requests.get(url).json()
+    object_data = requests.get(url, proxies=proxies).json()
     params = {'object_name': args.object, 'classes': [], 'enums': []}
 
     for name in object_data['definitions']:
@@ -228,12 +216,18 @@ def main():
             _add_enum(params, name, definition)
         else:
             LOG.debug('Skipping %s', definition)
+    # pp = pprint.PrettyPrinter(indent=4)
+    # pp. pprint(params)
+
+    outputfile = '%s' % args.output
+    print(outputfile)
 
     with io.open('source.tmpl', 'r', encoding='utf-8') as f:
         template_body = f.read()
 
     template = jinja2.Template(template_body)
-    print(template.render(**params))
+    # print(template.render(**params))
+    template.stream(**params).dump(outputfile)
 
 
 if __name__ == '__main__':

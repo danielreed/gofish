@@ -1,0 +1,64 @@
+mkdir gofiles
+python generate_from_schema.py -o gofiles/AccelerationFunction.go -s f1.txt AccelerationFunction
+python generate_from_schema.py -o gofiles/ActionInfo.go -s f1.txt ActionInfo
+python generate_from_schema.py -o gofiles/Assembly.go -s f1.txt Assembly
+python generate_from_schema.py -o gofiles/AttributeRegistry.go -s f1.txt AttributeRegistry
+python generate_from_schema.py -o gofiles/Bios.go -s f1.txt Bios
+python generate_from_schema.py -o gofiles/BootOption.go -s f1.txt BootOption
+python generate_from_schema.py -o gofiles/Certificate.go -s f1.txt Certificate
+python generate_from_schema.py -o gofiles/CertificateLocations.go -s f1.txt CertificateLocations
+python generate_from_schema.py -o gofiles/Chassis.go -s f1.txt Chassis
+python generate_from_schema.py -o gofiles/ComputerSystem.go -s f1.txt ComputerSystem
+python generate_from_schema.py -o gofiles/Endpoint.go -s f1.txt Endpoint
+python generate_from_schema.py -o gofiles/EthernetInterface.go -s f1.txt EthernetInterface
+python generate_from_schema.py -o gofiles/Fabric.go -s f1.txt Fabric
+python generate_from_schema.py -o gofiles/HostInterface.go -s f1.txt HostInterface
+python generate_from_schema.py -o gofiles/IPAddresses.go -s f1.txt IPAddresses
+python generate_from_schema.py -o gofiles/Job.go -s f1.txt Job
+python generate_from_schema.py -o gofiles/JsonSchemaFile.go -s f1.txt JsonSchemaFile
+python generate_from_schema.py -o gofiles/LogEntry.go -s f1.txt LogEntry
+python generate_from_schema.py -o gofiles/Manager.go -s f1.txt Manager
+python generate_from_schema.py -o gofiles/ManagerAccount.go -s f1.txt ManagerAccount
+python generate_from_schema.py -o gofiles/Memory.go -s f1.txt Memory
+python generate_from_schema.py -o gofiles/MemoryChunks.go -s f1.txt MemoryChunks
+python generate_from_schema.py -o gofiles/MemoryDomain.go -s f1.txt MemoryDomain
+python generate_from_schema.py -o gofiles/MemoryMetrics.go -s f1.txt MemoryMetrics
+python generate_from_schema.py -o gofiles/Message.go -s f1.txt Message
+python generate_from_schema.py -o gofiles/MessageRegistry.go -s f1.txt MessageRegistry
+python generate_from_schema.py -o gofiles/MessageRegistryFile.go -s f1.txt MessageRegistryFile
+python generate_from_schema.py -o gofiles/MetricDefinition.go -s f1.txt MetricDefinition
+python generate_from_schema.py -o gofiles/MetricReport.go -s f1.txt MetricReport
+python generate_from_schema.py -o gofiles/MetricReportDefinition.go -s f1.txt MetricReportDefinition
+python generate_from_schema.py -o gofiles/NetworkAdapter.go -s f1.txt NetworkAdapter
+python generate_from_schema.py -o gofiles/NetworkInterface.go -s f1.txt NetworkInterface
+python generate_from_schema.py -o gofiles/NetworkPort.go -s f1.txt NetworkPort
+python generate_from_schema.py -o gofiles/PCIeFunction.go -s f1.txt PCIeFunction
+python generate_from_schema.py -o gofiles/PCIeSlots.go -s f1.txt PCIeSlots
+python generate_from_schema.py -o gofiles/PhysicalContext.go -s f1.txt PhysicalContext
+python generate_from_schema.py -o gofiles/Port.go -s f1.txt Port
+python generate_from_schema.py -o gofiles/Power.go -s f1.txt Power
+python generate_from_schema.py -o gofiles/Processor.go -s f1.txt Processor
+python generate_from_schema.py -o gofiles/ProcessorMetrics.go -s f1.txt ProcessorMetrics
+python generate_from_schema.py -o gofiles/Redundancy.go -s f1.txt Redundancy
+python generate_from_schema.py -o gofiles/Resource.go -s f1.txt Resource
+python generate_from_schema.py -o gofiles/ResourceBlock.go -s f1.txt ResourceBlock
+python generate_from_schema.py -o gofiles/Role.go -s f1.txt Role
+python generate_from_schema.py -o gofiles/SecureBoot.go -s f1.txt SecureBoot
+python generate_from_schema.py -o gofiles/Sensor.go -s f1.txt Sensor
+python generate_from_schema.py -o gofiles/SerialInterface.go -s f1.txt SerialInterface
+python generate_from_schema.py -o gofiles/Session.go -s f1.txt Session
+python generate_from_schema.py -o gofiles/Settings.go -s f1.txt Settings
+python generate_from_schema.py -o gofiles/SimpleStorage.go -s f1.txt SimpleStorage
+python generate_from_schema.py -o gofiles/Storage.go -s f1.txt Storage
+python generate_from_schema.py -o gofiles/Switch.go -s f1.txt Switch
+python generate_from_schema.py -o gofiles/Task.go -s f1.txt Task
+python generate_from_schema.py -o gofiles/Thermal.go -s f1.txt Thermal
+python generate_from_schema.py -o gofiles/Triggers.go -s f1.txt Triggers
+python generate_from_schema.py -o gofiles/VirtualMedia.go -s f1.txt VirtualMedia
+python generate_from_schema.py -o gofiles/VLanNetworkInterface.go -s f1.txt VLanNetworkInterface
+python generate_from_schema.py -o gofiles/Volume.go -s f1.txt Volume
+python generate_from_schema.py -o gofiles/Zone.go -s f1.txt Zone
+echo "Go source has been created in ./gofiles/"
+echo "Executing go fmt * ..."
+go fmt ./gofiles/*.go
+echo "Ready for manual cleanup."

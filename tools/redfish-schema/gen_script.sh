@@ -14,7 +14,7 @@ schemadoc=DSP8010_2019.1_0.zip
 echo "Fetching schema document $schemadoc"
 # We only use the zip file to get the object names. It's a little easier to
 # manage.
-curl -G -L https://www.dmtf.org/sites/default/files/standards/documents/$schemadoc > wrk.zip
+#curl -G -L https://www.dmtf.org/sites/default/files/standards/documents/$schemadoc > wrk.zip
 # Generate the object list. No elegant, but it works well enough for now.
 #
 # SerialInterface and Switch still have some identifier issues to be worked out
@@ -24,19 +24,20 @@ curl -G -L https://www.dmtf.org/sites/default/files/standards/documents/$schemad
 # General process is get a list of the json-schema objects from the zip, drop
 # things we don't need/want, and clip the column we want generating a file of
 # object names we can use later.
-unzip -v wrk.zip | grep / | grep "json-schema" | cut -c 59- | cut -d "/" -f 3 |  grep . | grep -v "Collection" | grep -v "Schedule" | grep -v "redfish-schema" | grep -v ".v" | grep -v "odata" | grep -v "Protocol" | cut -d . -f 1 >f1.txt
+#unzip -v wrk.zip | grep / | grep "json-schema" | cut -c 59- | cut -d "/" -f 3 |  grep . | grep -v "Collection" | grep -v "Schedule" | grep -v "redfish-schema" | grep -v ".v" | grep -v "odata" | grep -v "Protocol" | cut -d . -f 1 >f1.txt
 # f1.txt now has our list of objects
 # don't need the document zip file any more...
-rm wrk.zip
+#rm wrk.zip
 # Now we're ready to populate the script file that will actually generate the
 # code files.
+
 echo "mkdir gofiles" > gen_go_source.sh
-lam -s "echo \"Getting object \\\"" f1.txt -s "\\\" and generating go source...\";python3 generate_from_schema.py " f1.txt -s " > gofiles/" f1.txt -s ".go " >> gen_go_source.sh
+cat f1.txt | while read line; do echo python generate_from_schema.py -o gofiles/$line.go -s f1.txt $line; done >> gen_go_source.sh
 echo "echo \"Go source has been created in ./gofiles/\"" >> gen_go_source.sh
 echo "echo \"Executing go fmt * ...\"" >> gen_go_source.sh
 echo "go fmt ./gofiles/*.go" >> gen_go_source.sh
 echo "echo \"Ready for manual cleanup.\"" >> gen_go_source.sh
 # Done. Finish cleaning up
-rm f1.txt
+#rm f1.txt
 #Execute the script
-sh ./gen_go_source.sh
+#sh ./gen_go_source.sh
