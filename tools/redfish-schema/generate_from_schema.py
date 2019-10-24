@@ -36,6 +36,7 @@ COMMON_DESC = {
     'Identifier': 'Identifier shall be unique within the managed ecosystem.',
 }
 
+
 def _ident(name):
     outname = name
 
@@ -46,6 +47,7 @@ def _ident(name):
     outname = outname.replace('/','_div_')
     outname = outname.replace('+','_plus_')
     return outname
+
 
 def _format_comment(name, description, cutpoint='used', add=' is'):
     if name in COMMON_DESC:
@@ -66,14 +68,14 @@ def _get_desc(obj):
     return desc
 
 
-def _get_type(name, obj):
+def _get_type(name, obj, schema_name):
     result = 'String'
     tipe = obj.get('type')
     anyof = obj.get('anyOf') or obj.get('items', {}).get('anyOf')
     if 'count' in name.lower():
         result = 'Int'
     elif name == 'Status':
-        result = 'common.Status'
+        result = 'StatusType'
     elif name == 'Identifier':
         # result = 'common.Identifier'
         result = 'Id'
@@ -81,6 +83,8 @@ def _get_type(name, obj):
         result = 'String'
     elif tipe == 'object':
         result = name
+    elif name == 'UUID':
+        result = 'String'
     elif isinstance(tipe, list):
         for kind in tipe:
             if kind == 'null':
@@ -89,6 +93,8 @@ def _get_type(name, obj):
                 result = 'Int'
             elif kind == 'boolean':
                 result = 'Boolean'
+            elif kind == 'string':
+                result = 'String'
             else:
                 result = kind
     elif isinstance(anyof, list):
@@ -97,8 +103,11 @@ def _get_type(name, obj):
                 result = kind['$ref'].split('/')[-1]
     elif '$ref' in obj.get('items', {}):
         result = obj['items']['$ref'].split('/')[-1]
-    elif name[:1] == name[:1].lower() and 'odata' not in name.lower(): # doesn't work
-        result = 'common.Link'
+        if result == 'idRef':
+            result = 'String'
+    #  elif name[:1] == name[:1].lower() and 'odata' not in name.lower(): # doesn't work
+    elif name == 'Links':
+        result = schema_name + 'LinksType'
 
     if tipe == 'array':
         # result = '[]' + result
@@ -111,7 +120,7 @@ def _get_type(name, obj):
     return result
 
 
-def _add_object(params, name, obj):
+def _add_object(params, name, obj, schema_name):
     """Adds object information to our template parameters."""
     class_info = {
         'name': name,
@@ -119,12 +128,19 @@ def _add_object(params, name, obj):
         'description': _format_comment(name, _get_desc(obj)),
         'attrs': []}
 
+    if 'Links' in name:
+        class_info['name'] = schema_name + class_info['name']
+        class_info['identname'] = schema_name + class_info['identname']
+
     for prop in obj.get('properties', []):
         if prop in ['Name', 'Id']:
             continue
         prawp = obj['properties'][prop]
         if prawp.get('deprecated'):
             continue
+        # if isinstance(_get_type(prop, prawp), unicode):  # skip object types
+        #     continue
+
         attr = {'name': COMMON_NAME_CHANGES.get(prop, prop)}
 
         if '@odata' in prop:
@@ -134,30 +150,19 @@ def _add_object(params, name, obj):
                 replacement = ''
             attr['name'] = '%s%s' % (
                 props[0].replace('@odata', replacement), props[-1].title())
-        attr['type'] = _get_type(prop, prawp)
+        attr['type'] = _get_type(prop, prawp, schema_name)
         attr['description'] = _format_comment(
             prop, _get_desc(prawp))
         class_info['attrs'].append(attr)
     params['classes'].append(class_info)
 
 
-def _add_enum(params, name, enum):
-    """Adds enum information to our template parameters."""
-    enum_info = {
-        'name': name,
-        'identname' : _ident(name),
-        'description': _format_comment(name, _get_desc(enum)),
-        'members': []}
-
-    for en in enum.get('enum', []):
-        member = {'identname': _ident(en), 'name': en}
-        if enum.get('enumLongDescriptions', {}).get(en):
-            desc = enum.get('enumLongDescriptions', {}).get(en)
-        else:
-            desc = enum.get('enumDescriptions', {}).get(en, '')
-        member['description'] = _format_comment(_ident('%s%s' % (en, name)), desc, cutpoint='shall', add='')
-        enum_info['members'].append(member)
-    params['enums'].append(enum_info)
+def _update_enum(params, name):
+    """Changes enums to Strings"""
+    for c in params['classes']:
+        for a in c['attrs']:
+            if name == a['name'] and a['type'] != 'String':
+                a['type'] = 'String'
 
 
 def main():
@@ -202,25 +207,31 @@ def main():
             break
 
     object_data = requests.get(url, proxies=proxies).json()
-    params = {'object_name': args.object, 'classes': [], 'enums': []}
+
+    params = {'object_name': args.object, 'classes': []}
 
     for name in object_data['definitions']:
-        if name == 'Actions':
+        if name == 'Actions' or name == 'OemActions':
             continue
         definition = object_data['definitions'][name]
         if definition.get('type') == 'object':
             properties = definition.get('properties', '')
             if not ('target' in properties and 'title' in properties):
-                _add_object(params, _ident(name), definition)
-        elif definition.get('enum'):
-            _add_enum(params, name, definition)
+                _add_object(params, _ident(name), definition, args.object)
         else:
             LOG.debug('Skipping %s', definition)
+
+    for name in object_data['definitions']:
+        if name == 'Actions':
+            continue
+        definition = object_data['definitions'][name]
+        if definition.get('enum'):
+            _update_enum(params, name)
+
     # pp = pprint.PrettyPrinter(indent=4)
     # pp. pprint(params)
 
     outputfile = '%s' % args.output
-    print(outputfile)
 
     with io.open('source.tmpl', 'r', encoding='utf-8') as f:
         template_body = f.read()
